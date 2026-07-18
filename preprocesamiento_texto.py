@@ -2,6 +2,7 @@
 import pandas as pd
 import re
 import emoji
+import unicodedata
 
 
 #ELIMINAR EMOJIS
@@ -19,6 +20,9 @@ def limpiar_texto(texto):
 
     # Convertir a string y minúsculas
     texto = str(texto).lower()
+
+    # Normalizar Unicode (evita acentos "rotos" o descompuestos)
+    texto = unicodedata.normalize("NFC", texto)     # <-- agregar esta línea
 
     # Eliminar emojis
     texto = eliminar_emojis(texto)
