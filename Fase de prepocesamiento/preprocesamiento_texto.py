@@ -3,7 +3,8 @@ import pandas as pd
 import re
 import emoji
 import unicodedata
-
+from pathlib import Path 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 #ELIMINAR EMOJIS
 def eliminar_emojis(texto):
@@ -58,7 +59,8 @@ def limpiar_texto(texto):
 #MAIN
 def main():
 
-    archivo_entrada = "dataset_reportes_sinteticos.csv"
+    archivo_entrada = archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
+
     archivo_salida = "dataset_reportes_preprocesado.csv"
 
     print("=" * 60)

@@ -19,12 +19,14 @@
 #      finales de aprobación/rechazo para incluir en el informe.
 
 import pandas as pd
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
-archivo_entrada = "dataset_reportes_sinteticos.csv"
+archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
 archivo_plantilla = "auditoria_manual_muestra.csv"
 archivo_completado = "auditoria_manual_muestra_completada.csv"  # se usa luego, tras completar a mano
 

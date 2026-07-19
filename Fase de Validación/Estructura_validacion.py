@@ -12,12 +12,15 @@
 #      tolerancia del 1% respecto al valor esperado por clase (N/3).
 
 import pandas as pd
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
-archivo_entrada = "dataset_reportes_sinteticos.csv"
+archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
 
 columnas_obligatorias = [
     "ID_Reporte",

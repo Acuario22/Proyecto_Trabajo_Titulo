@@ -1,0 +1,19 @@
+# Entorno virtual (NUNCA subir a GitHub)
+.venv/
+venv/
+env/
+
+# Archivos de Python compilados
+__pycache__/
+*.pyc
+*.pyo
+
+# Configuración de VS Code (opcional, algunos prefieren mantenerla)
+.vscode/
+
+# Archivos temporales del sistema
+.DS_Store
+Thumbs.db
+
+# Modelos descargados de spaCy (se reinstalan con el comando de descarga, no hace falta subirlos)
+# (spaCy los guarda dentro del venv normalmente, así que ya quedan excluidos arriba)

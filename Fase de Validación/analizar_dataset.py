@@ -15,11 +15,14 @@ from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
-archivo_entrada = "dataset_reportes_sinteticos.csv"
+archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
 total_esperado = 2000
 
 # Vocabulario que NO debería aparecer en cada categoría
