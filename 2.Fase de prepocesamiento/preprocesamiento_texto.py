@@ -1,4 +1,4 @@
-# 02_preprocesamiento_texto.py
+# A)Preprocesamiento de texto.py
 import pandas as pd
 import re
 import emoji

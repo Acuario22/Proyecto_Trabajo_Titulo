@@ -1,18 +1,18 @@
-# 02b_tokenizacion_lematizacion.py
+# B) Tokenización y lematización.py
 #
 # OBJETIVO
-# Continuar la Fase 2 (Ingeniería y Preparación de Datos) sobre el texto ya
-# normalizado y limpio (Texto_Limpio), aplicando:
-#   1) Tokenización       -> separar el texto en palabras individuales
+# Fase 2 (Ingeniería y Preparación de Datos)
+#   
+#   1) Tokenización             -> separar el texto en palabras individuales
 #   2) Eliminación de stopwords -> quitar palabras sin valor semántico (el, la, de, que, etc.)
-#   3) Lematización        -> reducir cada palabra a su forma base/raíz
+#   3) Lematización             -> reducir cada palabra a su forma base/raíz
 #                              (ej. "reportado", "reportando" -> "reportar")
 #
-# Este script se ejecuta DESPUÉS de 02_preprocesamiento_texto.py, tomando como
+# Este script se ejecuta DESPUÉS de preprocesamiento_texto.py, tomando como
 # entrada el archivo "dataset_reportes_preprocesado.csv" (que ya tiene la
 # columna "Texto_Limpio").
 #
-# REQUISITOS (instalar antes de correr):
+#   REQUISITOS:
 #   pip install spacy
 #   python -m spacy download es_core_news_md
 #
@@ -24,13 +24,16 @@
 import pandas as pd
 import spacy
 import json
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
-archivo_entrada = "dataset_reportes_preprocesado.csv"
-archivo_salida = "dataset_reportes_procesado_final.csv"
+archivo_entrada = BASE_DIR / "2.Fase de prepocesamiento" / "dataset_reportes_preprocesado.csv"
+archivo_salida = BASE_DIR / "2.Fase de prepocesamiento" / "dataset_reportes_procesado_final.csv"
 
 MODELO_SPACY = "es_core_news_md"
 
@@ -50,13 +53,14 @@ stopwords_spacy = nlp.Defaults.stop_words
 # ---------------------
 # STOPWORDS ADICIONALES ESPECÍFICAS DEL DOMINIO (opcional)
 # ---------------------
-# Agrega aquí palabras propias de tus reportes que no aportan valor semántico
+# Agrega aquí palabras propias de los reportes que no aportan valor semántico
 # para clasificar categoría/urgencia/sentimiento. Ajusta según lo que veas
 # en tus resultados.
+
 stopwords_extra = {
     "favor", "municipio", "señor", "señora",
     "él", "ella", "ello", "los", "las",
-    "q"
+    "q", "pq", "xq"
 }
 
 stopwords_totales = stopwords_spacy.union(stopwords_extra)
@@ -86,6 +90,7 @@ def procesar_texto(texto: str) -> dict:
     # de filtrar stopwords, en vez de comparar el string completo -- si no,
     # palabras como "él" quedan "escondidas" dentro del lema compuesto y
     # nunca se filtran.
+
     pares_token_lema = [
         (token.text, token.lemma_ if token.pos_ != "PROPN" else token.text)
         for token in doc
