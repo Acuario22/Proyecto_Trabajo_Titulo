@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
-archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
+archivo_entrada = BASE_DIR / "1.Fase de generación" / "dataset_reportes_sinteticos.csv"
 
 columnas_obligatorias = [
     "ID_Reporte",

@@ -59,7 +59,7 @@ def limpiar_texto(texto):
 #MAIN
 def main():
 
-    archivo_entrada = archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
+    archivo_entrada = archivo_entrada = BASE_DIR / "1.Fase de generación" / "dataset_reportes_sinteticos.csv"
 
     archivo_salida = "dataset_reportes_preprocesado.csv"
 

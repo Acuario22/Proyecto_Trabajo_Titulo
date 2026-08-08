@@ -13,7 +13,7 @@
 
 
 #LIBRERÍAS
-import requests              #Librería para hacer llamadas HTTP a la API
+import requests             #Librería para hacer llamadas HTTP a la API
 import pandas as pd         #Librería para manejar dataframes y exportar a CSV
 import os                   #Librería para manejar archivos y directorios
 import time                 #Librería para manejar tiempos de espera entre llamadas a la API

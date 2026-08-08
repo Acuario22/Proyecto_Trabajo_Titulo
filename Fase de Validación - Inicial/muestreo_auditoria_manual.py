@@ -28,7 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ---------------------
 archivo_entrada = BASE_DIR / "Fase de generación" / "dataset_reportes_sinteticos.csv"
 archivo_plantilla = "auditoria_manual_muestra.csv"
-archivo_completado = "auditoria_manual_muestra_completada.csv"  # se usa luego, tras completar a mano
+archivo_completado = BASE_DIR / "auditoria_manual_muestra_completada.csv"  # se usa luego, tras completar a mano
 
 TAMANO_MUESTRA = 100
 SEMILLA = 42  # random_state fijo, para que la muestra sea reproducible
@@ -120,5 +120,5 @@ if __name__ == "__main__":
     # manual y guardado el archivo como "auditoria_manual_muestra_completada.csv",
     # comenta la línea de abajo y descomenta resumir_auditoria().
 
-    generar_plantilla()
-    # resumir_auditoria()
+    #generar_plantilla()
+     resumir_auditoria()
