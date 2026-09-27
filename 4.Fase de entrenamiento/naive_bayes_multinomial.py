@@ -8,11 +8,17 @@
 #   se entrena un modelo de Naive Bayes Multinomial y se evalúa su desempeño.
 # - Mismo flujo que los scripts de Regresión Logística y SVM Lineal.
 
+# MEJORAS:
+# - Se implementa búsqueda de hiperparámetros mediante GridSearchCV para optimizar
+#  el parámetro de suavizado "alpha" del modelo de Naive Bayes Multinomial.
+# - Se utiliza StratifiedKFold para asegurar que cada pliegue de validación
+#   cruzada mantenga la proporción de clases.
+
 import pandas as pd
 import joblib
 from pathlib import Path
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.metrics import (
     classification_report,
@@ -38,11 +44,26 @@ VARIABLES_OBJETIVO = ["Categoria", "Urgencia", "Sentimiento"]
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
+N_FOLDS = 5
 
-# -----------------------------------------------------------------
-# FUNCIÓN: ENTRENAR Y EVALUAR UN MODELO PARA UNA VARIABLE OBJETIVO
-# -----------------------------------------------------------------
-def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
+# ---------------------
+# GRILLA DE HIPERPARÁMETROS A EXPLORAR
+# ---------------------
+# alpha: parámetro de suavizado de Laplace (Laplace/Lidstone smoothing).
+#    Valores bajos (cercanos a 0) = menos suavizado, el modelo confía más
+#    fuertemente en las frecuencias observadas en el entrenamiento (mayor
+#    riesgo de asignar probabilidad cero a términos poco frecuentes).
+#    Valores altos = más suavizado, el modelo es más conservador y menos
+#    sensible a términos raros.
+PARAM_GRID = {
+    "alpha": [0.01, 0.1, 0.5, 1.0, 2.0, 5.0]
+}
+
+
+# -------------------------------------------------------------------
+# FUNCIÓN 1: ENTRENAR Y EVALUAR UN MODELO PARA UNA VARIABLE OBJETIVO
+# -------------------------------------------------------------------
+def optimizar_y_evaluar(X, y, nombre_variable: str) -> dict:
     print("\n" + "=" * 60)
     print(f"VARIABLE OBJETIVO: {nombre_variable}")
     print("=" * 60)
@@ -52,14 +73,28 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     )
     print(f"Entrenamiento: {X_train.shape[0]} muestras | Prueba: {X_test.shape[0]} muestras")
 
-    # MultinomialNB: modelo probabilístico basado en el Teorema de Bayes,
-    # asumiendo independencia condicional entre los términos del vocabulario.
-    # No tiene hiperparámetros de complejidad relevantes que ajustar más allá
-    # de "alpha" (suavizado de Laplace), que se deja en su valor por defecto (1.0).
-    modelo = MultinomialNB()
-    modelo.fit(X_train, y_train)
+    cv_estratificado = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
 
-    y_pred = modelo.predict(X_test)
+    modelo_base = MultinomialNB()
+
+    busqueda_grid = GridSearchCV(
+        estimator=modelo_base,
+        param_grid=PARAM_GRID,
+        scoring="f1_macro",
+        cv=cv_estratificado,
+        n_jobs=-1,  
+        verbose=1
+    )
+
+    print("\nIniciando búsqueda de hiperparámetros con GridSearchCV...")
+    busqueda_grid.fit(X_train, y_train)
+
+    print(f"\nMejores hiperparámetros encontrados: {busqueda_grid.best_params_}")
+    mejor_modelo = busqueda_grid.best_estimator_
+
+    y_pred = mejor_modelo.predict(X_test)
+
+
 
     # ---------------------
     # MÉTRICAS DE EVALUACIÓN
@@ -99,11 +134,11 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     plt.close()
     print(f"Matriz de confusión guardada en: {ruta_figura}")
 
-    # ---------------------
-    # GUARDAR MODELO ENTRENADO
-    # ---------------------
+    # ---------------------------
+    # GUARDAR EL MODELO ENTRENADO
+    # ----------------------------
     ruta_modelo = carpeta_salida / f"modelo_naive_bayes_{nombre_variable.lower()}.joblib"
-    joblib.dump(modelo, ruta_modelo)
+    joblib.dump(mejor_modelo, ruta_modelo)
     print(f"Modelo guardado en: {ruta_modelo}")
 
     return {
@@ -115,9 +150,9 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     }
 
 
-# ------
+# ---------------------
 # MAIN
-# ------
+# ---------------------
 def main():
     print("=" * 60)
     print("ENTRENAMIENTO - NAIVE BAYES MULTINOMIAL")
@@ -134,7 +169,7 @@ def main():
             print(f"Columna '{variable}' no encontrada en el dataset, se omite.")
             continue
         y = df[variable]
-        resultado = entrenar_y_evaluar(X, y, variable)
+        resultado = optimizar_y_evaluar(X, y, variable)
         resultados.append(resultado)
 
     # ---------------------

@@ -10,13 +10,19 @@
 #   matriz de confusión y se guardan los modelos entrenados en formato .joblib.
 # - Se genera un resumen comparativo de las 3 tareas de clasificación.
 
+# MEJORAS
+# - Se implementa GridSearchCV para optimizar los hiperparámetros 
+#   del modelo de Regresión Logística.
+# - Se utiliza StratifiedKFold para asegurar que cada pliegue de 
+#   validación cruzada mantenga la proporción de clases.
+
 import pandas as pd
 import numpy as np
 import joblib
 from pathlib import Path
 
-#Importación de librerías de Scikit-learn para el entrenamiento y evaluación del modelo
-from sklearn.model_selection import train_test_split
+#Importación de librerías de Scikit-learn para el entrenamiento, optimización y evaluación del modelo
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     classification_report,
@@ -49,6 +55,24 @@ RANDOM_STATE = 42
 #Proporción de datos para el conjunto de prueba (20% para prueba, 80% para entrenamiento)
 TEST_SIZE = 0.2
 
+#Número de pliegues para validación cruzada estratificada
+N_FOLDS = 5
+
+# ---------------------
+# TECNICA DE GRIDSEARCH PARA OPTIMIZACIÓN DE HIPERPARÁMETROS
+# ---------------------
+# C: inverso de la fuerza de regularización (valores bajos = más regularización,
+#    penaliza más la complejidad del modelo; valores altos = menos regularización,
+#    el modelo se ajusta más de cerca a los datos de entrenamiento).
+# class_weight: "balanced" ajusta automáticamente el peso de cada clase de forma
+#    inversamente proporcional a su frecuencia, útil si alguna clase es más
+#    difícil de predecir que otras aunque el dataset esté balanceado en volumen.
+PARAM_GRID = {
+    "C": [0.01, 0.1, 1, 10, 100],
+    "class_weight": [None, "balanced"]
+}
+
+
 # ------------------------------------------------------------------
 # FUNCIÓN 1: ENTRENAR Y EVALUAR UN MODELO PARA UNA VARIABLE OBJETIVO
 # ------------------------------------------------------------------
@@ -63,12 +87,31 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     )
     print(f"Entrenamiento: {X_train.shape[0]} muestras | Prueba: {X_test.shape[0]} muestras")
 
+    #Validacion cruzada
+    cv_estratificado = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
+
     # Entrenamiento del modelo
     modelo = LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)
-    modelo.fit(X_train, y_train)
 
-    # Predicciones sobre el conjunto de prueba
-    y_pred = modelo.predict(X_test)
+    busqueda = GridSearchCV(
+        estimator=modelo,
+        param_grid=PARAM_GRID,
+        scoring="f1_macro",
+        cv=cv_estratificado,
+        n_jobs=-1,
+        verbose=1
+    )
+
+    print("\nIniciando búsqueda de hiperparámetros con GridSearchCV...")
+    busqueda.fit(X_train, y_train)
+
+    print(f"Mejores hiperparámetros encontrados: {busqueda.best_params_}")
+    print(f"Mejor puntuación F1-Macro en validación cruzada: {busqueda.best_score_:.4f}")
+
+    mejor_modelo = busqueda.best_estimator_
+
+    #Evaluacion final del modelo con los mejores hiperparámetros encontrados
+    y_pred = mejor_modelo.predict(X_test)
 
     # -----------------------
     # MÉTRICAS DE EVALUACIÓN
@@ -108,11 +151,11 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     plt.close()
     print(f"Matriz de confusión guardada en: {ruta_figura}")
 
-    # ------------------------
+    # ----------------------------
     # GUARDAR EL MODELO ENTRENADO
-    # ------------------------
+    # ----------------------------
     ruta_modelo = carpeta_salida / f"modelo_regresion_logistica_{nombre_variable.lower()}.joblib"
-    joblib.dump(modelo, ruta_modelo)
+    joblib.dump(mejor_modelo, ruta_modelo)
     print(f"Modelo guardado en: {ruta_modelo}")
 
     return {

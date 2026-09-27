@@ -8,11 +8,17 @@
 #   se entrena un modelo de SVM Lineal y se evalúa su desempeño.
 # - Sigue el mismo flujo que el script de Regresión Logística.
 
+# MEJORAS:
+# - Se implementa búsqueda de hiperparámetros mediante GridSearchCV para optimizar
+#   el parámetro de regularización "C" y el peso de clase "class_weight"
+# - Se utiliza StratifiedKFold para asegurar que cada pliegue de validación 
+#   cruzada mantenga la proporción de clases.
+
 import pandas as pd
 import joblib
 from pathlib import Path
 
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, StratifiedKFold
 from sklearn.svm import LinearSVC
 from sklearn.metrics import (
     classification_report,
@@ -38,11 +44,25 @@ VARIABLES_OBJETIVO = ["Categoria", "Urgencia", "Sentimiento"]
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
+N_FOLDS = 5
+
+# ---------------------
+# GRILLA DE HIPERPARÁMETROS A EXPLORAR
+# ---------------------
+# C: parámetro de regularización de SVM (valores bajos = margen más amplio,
+#    tolera más errores de clasificación en entrenamiento; valores altos =
+#    margen más estrecho, penaliza fuertemente los errores, riesgo de sobreajuste).
+# class_weight: "balanced" ajusta el peso de cada clase de forma inversamente
+#    proporcional a su frecuencia.
+PARAM_GRID = {
+    "C": [0.01, 0.1, 1, 10, 100],
+    "class_weight": [None, "balanced"]
+}
 
 # -------------------------------------------------------------------
 # FUNCIÓN 1: ENTRENAR Y EVALUAR UN MODELO PARA UNA VARIABLE OBJETIVO
 # -------------------------------------------------------------------
-def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
+def optimizar_y_evaluar(X, y, nombre_variable: str) -> dict:
     print("\n" + "=" * 60)
     print(f"VARIABLE OBJETIVO: {nombre_variable}")
     print("=" * 60)
@@ -52,13 +72,34 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     )
     print(f"Entrenamiento: {X_train.shape[0]} muestras | Prueba: {X_test.shape[0]} muestras")
 
-    # LinearSVC: implementación optimizada de SVM lineal para datos dispersos
-    # de alta dimensionalidad (como TF-IDF). 
-    # A diferencia de SVC(kernel="linear"), escala mejor con vocabularios grandes.
-    modelo = LinearSVC(random_state=RANDOM_STATE, max_iter=5000)
-    modelo.fit(X_train, y_train)
+    cv_estratificado = StratifiedKFold(n_splits=N_FOLDS, shuffle=True, random_state=RANDOM_STATE)
 
-    y_pred = modelo.predict(X_test)
+    # LinearSVC: implementación optimizada de SVM lineal para datos dispersos
+    # de alta dimensionalidad (como TF-IDF). A diferencia de SVC(kernel="linear"),
+    # escala mejor con vocabularios grandes.
+    
+    modelo_base = LinearSVC(random_state=RANDOM_STATE, max_iter=5000)
+
+    busqueda = GridSearchCV(
+        estimator=modelo_base,
+        param_grid=PARAM_GRID,
+        scoring="f1_macro",
+        cv=cv_estratificado,
+        n_jobs=-1,
+        verbose=1
+    )
+
+    print(f"\nIniciando búsqueda de hiperparámetros para {nombre_variable}...")
+    busqueda.fit(X_train, y_train)
+
+    print(f"\nMejores hiperparámetros encontrados: {busqueda.best_params_}")
+    print(f"Mejor puntuación F1-Macro en validación cruzada: {busqueda.best_score_:.4f}")
+
+    mejor_modelo = busqueda.best_estimator_
+
+    # Evaluación final del modelo con los mejores hiperparámetros encontrados
+    y_pred = mejor_modelo.predict(X_test)
+
 
     # ----------------------
     # MÉTRICAS DE EVALUACIÓN
@@ -102,7 +143,7 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
     # GUARDAR EL MODELO ENTRENADO
     # ---------------------
     ruta_modelo = carpeta_salida / f"modelo_svm_lineal_{nombre_variable.lower()}.joblib"
-    joblib.dump(modelo, ruta_modelo)
+    joblib.dump(mejor_modelo, ruta_modelo)
     print(f"Modelo guardado en: {ruta_modelo}")
 
     return {
@@ -113,9 +154,10 @@ def entrenar_y_evaluar(X, y, nombre_variable: str) -> dict:
         "Recall_Macro": recall_macro
     }
 
-# -----
+
+# ---------------------
 # MAIN
-# -----
+# ---------------------
 def main():
     print("=" * 60)
     print("ENTRENAMIENTO - SVM LINEAL")
@@ -132,7 +174,7 @@ def main():
             print(f"Columna '{variable}' no encontrada en el dataset, se omite.")
             continue
         y = df[variable]
-        resultado = entrenar_y_evaluar(X, y, variable)
+        resultado = optimizar_y_evaluar(X, y, variable)
         resultados.append(resultado)
 
     # ---------------------
