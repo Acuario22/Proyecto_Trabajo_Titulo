@@ -1,3 +1,5 @@
+# Archivo con el objetivo de visualizar el vectorizador TF-IDF generado
+
 from pathlib import Path
 import joblib
 

@@ -1,17 +1,17 @@
-# B) Tokenización y lematización.py
+#Script para tokenizar, eliminar stopwords y lematizar 
+# el texto de los reportes generados en el paso anterior
+
+#COMO FUNCIONA ESTE SCRIPT:
+# - Este script se ejecuta DESPUÉS de preprocesamiento_texto.py, tomando como
+#   entrada el archivo "dataset_reportes_preprocesado.csv" (que ya tiene la
+#   columna "Texto_Limpio").
 #
-# OBJETIVO
-# Fase 2 (Ingeniería y Preparación de Datos)
-#   
-#   1) Tokenización             -> separar el texto en palabras individuales
-#   2) Eliminación de stopwords -> quitar palabras sin valor semántico (el, la, de, que, etc.)
-#   3) Lematización             -> reducir cada palabra a su forma base/raíz
+# - Aplica tres pasos de procesamiento de texto:
+# - Tokenización             -> separar el texto en palabras individuales
+# - Eliminación de stopwords -> quitar palabras sin valor semántico (el, la, de, que, etc.)
+# - Lematización             -> reducir cada palabra a su forma base/raíz
 #                              (ej. "reportado", "reportando" -> "reportar")
-#
-# Este script se ejecuta DESPUÉS de preprocesamiento_texto.py, tomando como
-# entrada el archivo "dataset_reportes_preprocesado.csv" (que ya tiene la
-# columna "Texto_Limpio").
-#
+
 #   REQUISITOS:
 #   pip install spacy
 #   python -m spacy download es_core_news_md
@@ -28,7 +28,6 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # ---------------------
 # CONFIGURACIÓN
 # ---------------------
@@ -37,10 +36,9 @@ archivo_salida = BASE_DIR / "2.Fase de prepocesamiento" / "dataset_reportes_proc
 
 MODELO_SPACY = "es_core_news_md"
 
-
-# ---------------------
+# -------------------------
 # CARGA DEL MODELO DE SPACY
-# ---------------------
+# -------------------------
 # Desactivamos componentes que no necesitamos (parser, ner) para que el
 # procesamiento sea más rápido, ya que solo necesitamos tokenización y lematización.
 print("Cargando modelo de lenguaje en español (spaCy)...")
@@ -50,10 +48,10 @@ print("Modelo cargado correctamente.\n")
 # Lista de stopwords en español que trae spaCy por defecto
 stopwords_spacy = nlp.Defaults.stop_words
 
-# ---------------------
-# STOPWORDS ADICIONALES ESPECÍFICAS DEL DOMINIO (opcional)
-# ---------------------
-# Agrega aquí palabras propias de los reportes que no aportan valor semántico
+# ----------------------------------------------------------
+# STOPWORDS ADICIONALES
+# -----------------------------------------------------------
+# Palabras propias de los reportes que no aportan valor semántico
 # para clasificar categoría/urgencia/sentimiento. Ajusta según lo que veas
 # en tus resultados.
 
@@ -65,9 +63,8 @@ stopwords_extra = {
 
 stopwords_totales = stopwords_spacy.union(stopwords_extra)
 
-
 # ---------------------
-# FUNCIÓN: TOKENIZAR + LEMATIZAR + ELIMINAR STOPWORDS
+# FUNCIÓN 1: TOKENIZAR + LEMATIZAR + ELIMINAR STOPWORDS
 # ---------------------
 def procesar_texto(texto: str) -> dict:
     if not texto or pd.isna(texto):
@@ -123,7 +120,6 @@ def procesar_texto(texto: str) -> dict:
         "texto_lematizado": texto_lematizado
     }
 
-
 # ---------------------
 # MAIN
 # ---------------------
@@ -173,7 +169,6 @@ def main():
     print(f"Promedio de tokens antes de quitar stopwords:  {promedio_tokens_antes:.1f}")
     print(f"Promedio de tokens después de quitar stopwords: {promedio_tokens_despues:.1f}")
     print(f"Reducción promedio: {(1 - promedio_tokens_despues/promedio_tokens_antes) * 100:.1f}%")
-
 
 if __name__ == "__main__":
     main()

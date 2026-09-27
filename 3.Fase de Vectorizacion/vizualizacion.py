@@ -1,3 +1,5 @@
+# Archivo con el objetivo de visualizar la matriz TF-IDF generada
+
 from pathlib import Path
 import joblib
 import matplotlib.pyplot as plt
@@ -12,8 +14,6 @@ matriz = joblib.load(archivo)
 # Imprime el tipo y la forma de la matriz cargada
 print(type(matriz))
 print(matriz.shape)
-
-
 
 # Grafica de dispersión de la matriz TF-IDF
 plt.figure(figsize=(8, 10))

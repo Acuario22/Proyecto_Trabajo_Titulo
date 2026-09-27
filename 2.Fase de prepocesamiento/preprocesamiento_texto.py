@@ -1,9 +1,16 @@
-# A)Preprocesamiento de texto.py
+#Script para preprocesar el texto de los reportes generados en la fase anterior
+
+#COMO FUNCIONA ESTE SCRIPT:
+# - Lee el dataset generado en la fase 1
+# - Aplica limpieza de texto (eliminación de emojis, caracteres extraños, acentos, números, etc.)
+# - Genera un nuevo dataset con la columna de "texto limpio"
+
 import pandas as pd
 import re
 import emoji
 import unicodedata
 from pathlib import Path 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 #ELIMINAR EMOJIS
@@ -12,8 +19,6 @@ def eliminar_emojis(texto):
 
 
 #LIMPIEZA DE TEXTO
-
-
 def limpiar_texto(texto):
 
     if pd.isna(texto):
@@ -23,7 +28,7 @@ def limpiar_texto(texto):
     texto = str(texto).lower()
 
     # Normalizar Unicode (evita acentos "rotos" o descompuestos)
-    texto = unicodedata.normalize("NFC", texto)     # <-- agregar esta línea
+    texto = unicodedata.normalize("NFC", texto) 
 
     # Eliminar emojis
     texto = eliminar_emojis(texto)
@@ -53,8 +58,6 @@ def limpiar_texto(texto):
     texto = texto.strip()
 
     return texto
-
-
 
 #MAIN
 def main():
@@ -128,9 +131,9 @@ def main():
     print("=" * 60)
 
     if len(caracteres_raros) == 0:
-        print("✓ No se detectaron caracteres extraños.")
+        print("No se detectaron caracteres extraños.")
     else:
-        print("⚠ Caracteres encontrados:")
+        print("Caracteres encontrados:")
         print(caracteres_raros)
 
 

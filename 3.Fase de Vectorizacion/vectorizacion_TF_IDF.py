@@ -1,26 +1,23 @@
-# OBJETIVO
-# Fase 3 del pipeline de Ingeniería de Datos: transformar el texto lematizado
-# (Texto_Lematizado) en una representación numérica mediante la técnica
-# TF-IDF (Term Frequency - Inverse Document Frequency).
-#
-# El resultado es una matriz dispersa (sparse) que sirve como insumo directo
-# para el entrenamiento de los modelos de clasificación (Capítulo 4).
-#
-# Este script:
-#   1) Carga el dataset con el texto ya lematizado.
-#   2) Ajusta (fit) un vectorizador TF-IDF sobre el corpus completo.
-#   3) Transforma el corpus a su representación vectorial (matriz TF-IDF).
-#   4) Guarda la matriz TF-IDF y el vectorizador entrenado para su reutilización
-#      posterior en el entrenamiento y en la inferencia (Capítulo 4).
-#   5) Reporta estadísticas descriptivas de la matriz resultante (dimensionalidad,
-#      dispersión, términos con mayor peso global) para su documentación.
+# Script para vectorizar el texto lematizado de los reportes 
+# mediante la tecnica TF-IDF (Term Frequency - Inverse Document Frequency) 
+# 
+# COMO FUNCIONA ESTE SCRIPT:
+# - Este script se ejecuta DESPUÉS de tocken_stepwo_lematizacion.py, tomando como
+#   entrada el archivo "dataset_reportes_procesado_final.csv" (que ya tiene la
+#   columna "Texto_Lematizado").
+# - Ajusta (fit) un vectorizador TF-IDF sobre el corpus completo.
+# - Transforma el corpus a su representación vectorial (matriz TF-IDF).
+
+# - El resultado es una matriz dispersa (sparse) que sirve como insumo directo
+#   para el entrenamiento de los modelos de clasificación.
+# - Se realiza un análisis de estadísticas descriptivas de la matriz resultante 
+#   (dimensionalidad, dispersión, términos con mayor peso global) para su documentación.
 
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 import joblib
 from pathlib import Path
-
 
 # ---------------------
 # CONFIGURACIÓN
@@ -38,10 +35,9 @@ MAX_FEATURES = 5000       # tamaño máximo del vocabulario (limita dimensionali
 NGRAM_RANGE = (1, 2)      # unigramas y bigramas de palabras (ej. "bache" y "bache calle")
 MIN_DF = 2                # ignora términos que aparecen en menos de 2 reportes (reduce ruido)
 
-
-# ---------------------
-# FUNCIÓN: VECTORIZAR EL CORPUS
-# ---------------------
+# -----------------------------------
+# FUNCIÓN 1: VECTORIZAR EL CORPUS
+# -----------------------------------
 def vectorizar_corpus(textos: pd.Series):
     vectorizador = TfidfVectorizer(
         max_features=MAX_FEATURES,
@@ -52,9 +48,9 @@ def vectorizar_corpus(textos: pd.Series):
     return matriz_tfidf, vectorizador
 
 
-# ---------------------
-# MAIN
-# ---------------------
+# ------------------
+# FUNCIÓN 2: MAIN
+# ------------------
 def main():
     print("=" * 60)
     print("VECTORIZACIÓN TF-IDF DEL CORPUS")
@@ -73,9 +69,9 @@ def main():
     print(f"\nAjustando y transformando vectorizador TF-IDF sobre '{COLUMNA_TEXTO}'...")
     matriz_tfidf, vectorizador = vectorizar_corpus(df[COLUMNA_TEXTO])
 
-    # ---------------------
+    # -------------------------------------
     # ESTADÍSTICAS DE LA MATRIZ RESULTANTE
-    # ---------------------
+    # -------------------------------------
     n_documentos, n_terminos = matriz_tfidf.shape
     total_celdas = n_documentos * n_terminos
     celdas_no_cero = matriz_tfidf.nnz
@@ -97,9 +93,9 @@ def main():
     for idx in top_indices:
         print(f"  {vocabulario[idx]:20s}  {pesos_promedio[idx]:.4f}")
 
-    # ---------------------
-    # GUARDAR MATRIZ Y VECTORIZADOR
-    # ---------------------
+    # ----------------------------------------
+    # GUARDAR MATRIZ Y VECTORIZADOR GENERADOS
+    # ----------------------------------------
     archivo_matriz_salida.parent.mkdir(parents=True, exist_ok=True)
     joblib.dump(matriz_tfidf, archivo_matriz_salida)
     joblib.dump(vectorizador, archivo_vectorizador_salida)
@@ -108,7 +104,6 @@ def main():
     print(f"Vectorizador guardado en:       {archivo_vectorizador_salida}")
     print("\n(El vectorizador se guarda para poder transformar nuevos reportes")
     print(" con el mismo vocabulario durante la etapa de inferencia del sistema.)")
-
 
 if __name__ == "__main__":
     main()

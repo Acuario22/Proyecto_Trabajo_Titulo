@@ -1,26 +1,26 @@
-# 01_Generar_datasets.py
-#OBJETIVO
-#Generar n reportes de ciudadanos sinteticos en español chileno para el entrenamiento del modelo
+#Script para generar un dataset sintetico de reportes ciudadanos
+#en español, para entrenar un modelo de machine learning 
+# clasificador de urgencia y categoría de reportes
 
 #COMO FUNCIONA ESTE SCRIPT:
-#   - Hace n llamadas a la API (n reportes por llamada)
-#   - Guarda cada lote apenas lo genera (tolerante a fallos)
-#   - Si el script se interrumpe, puedes retomarlo desde donde quedó sin perder los datos ya generados
-#   - Valida cada reporte generado contra un vocabulario prohibido por categoría
-#     (evita "fuga léxica" entre categorías, ej. mencionar "tapa de alcantarillado"
-#     en un reporte de Pavimentación). Los reportes que no pasan la validación
-#     se descartan y el script sigue pidiendo más hasta completar la cuota exacta.
+# - Hace n llamadas al modelo de lenguaje instalado localmente (qwen2.5:7b) para generar reportes sintéticos.
+# - Guarda cada lote generado apenas se genera.
+# - Si el script se interrumpe, puedes retomarlo desde donde quedó sin perder los datos ya generados
+# - Valida cada reporte generado contra un vocabulario prohibido por categoría
 
+#DETALLES
+# Evita "fuga léxica" entre categorías, ej. mencionar "tapa de alcantarillado"
+# en un reporte de Pavimentación). 
+# Los reportes que no pasan la validación se descartan y el 
+# script sigue pidiendo más hasta completar la cantidad exacta.
 
 #LIBRERÍAS
-import requests             #Librería para hacer llamadas HTTP a la API
-import pandas as pd         #Librería para manejar dataframes y exportar a CSV
-import os                   #Librería para manejar archivos y directorios
-import time                 #Librería para manejar tiempos de espera entre llamadas a la API
-import json                 #Librería para manejar archivos JSON
+import requests         
+import pandas as pd      
+import os                   
+import time                 
+import json                 
 import re                   #Librería para expresiones regulares (limpieza de texto)
-
-
 
 #---------------------
 #CONFIGURACIÓN PRINCIPAL
@@ -28,11 +28,10 @@ import re                   #Librería para expresiones regulares (limpieza de t
 
 API_KEY = ""
 archivo_salida = "dataset_reportes_sinteticos.csv"
-reportes_por_lote = 5      #Número de reportes a generar por cada llamada a la API (lotes chicos = más coherencia)
-total_reportes = 2000        #Número total de reportes a generar
-espera_entre_lotes = 1.0   #Segundos de espera entre cada lote para evitar sobrecargar la API
-max_intentos_por_combo = 15  #Tope de llamadas extra por combinación antes de rendirse (evita loops infinitos)
-
+reportes_por_lote = 5       #Número de reportes a generar por cada llamada al modelo (lotes chicos = más coherencia)
+total_reportes = 2000       #Número total de reportes a generar (n)
+espera_entre_lotes = 1.0    #Segundos de espera entre cada lote para evitar sobrecargar la API
+max_intentos_por_combo = 15 #Tope de llamadas extra por combinación antes de rendirse (evita loops infinitos)
 
 #---------------------
 #CATEGORIAS Y DISTRIBUCIÓN DE REPORTES
@@ -46,7 +45,6 @@ categorias = ["Pavimentación", "Alcantarillado", "Iluminación"]
 
 urgencias = ["Baja", "Media", "Alta"]
 sentimientos = ["Enojado", "Neutral", "Frustrado"]
-
 
 #---------------------
 #VOCABULARIO PROHIBIDO POR CATEGORÍA (auditoría de fuga léxica)
@@ -64,10 +62,9 @@ vocabulario_prohibido = {
                      "vereda dañada", "acera dañada", "alcantarilla"]
 }
 
-
-#---------------------
-#FUNCION 1: CONSTRUIR EL PROMPT PARA LA API
-#---------------------
+#----------------------------------------------------------
+#FUNCION 1: CONSTRUIR EL PROMPT PARA LA API LOCAL DE LA IA
+#-----------------------------------------------------------
 
 def construir_prompt(categoria: str, urgencia: str, sentimiento: str, cantidad: int) -> str:
     return f"""
@@ -164,12 +161,11 @@ def construir_prompt(categoria: str, urgencia: str, sentimiento: str, cantidad: 
 
     Genera exactamente {cantidad} objetos en el array."""
 
-#---------------------
+#-----------------------------------------------------------
 #FUNCION 2: LLAMAR A API DE LA IA Y OBTENER LOS REPORTES
-
 # Envía el prompt y parsear la respuesta JSON.
 # Si la respuesta viene mal formateada, lo intenta limpiar.
-#---------------------
+#-----------------------------------------------------------
 
 def generar_lotes(categoria: str, urgencia: str, sentimiento: str, cantidad: int) -> list:
 
@@ -207,10 +203,9 @@ def generar_lotes(categoria: str, urgencia: str, sentimiento: str, cantidad: int
     datos = json.loads(json_texto)
     return datos
 
-
-#---------------------
+#----------------------------------------------------
 #FUNCION 2B: VALIDAR COHERENCIA LÉXICA DE UN REPORTE
-#---------------------
+#----------------------------------------------------
 # Devuelve True si el texto NO contiene vocabulario prohibido para su categoría
 
 def validar_coherencia(texto: str, categoria: str) -> bool:
@@ -218,10 +213,8 @@ def validar_coherencia(texto: str, categoria: str) -> bool:
     prohibidas = vocabulario_prohibido.get(categoria, [])
     return not any(palabra in texto_lower for palabra in prohibidas)
 
-
 #---------------------
 #FUNCION 3: CARGAR EL PROGRESO PREVIO DESDE EL ARCHIVO CSV
-#
 # Si el script fue interrumpido, esta función detecta
 # cuántos reportes ya se generaron para no repetirlos.
 #---------------------
@@ -237,25 +230,23 @@ def cargar_progreso() -> tuple[pd.DataFrame, int]:
         print("No se encontró un archivo previo. Comenzando desde cero.")
         return pd.DataFrame(), 0
     
-
-
 #---------------------
 #MAIN: GENERAR LOS REPORTES Y GUARDAR EN CSV
 #---------------------
 
 def main():
 
-    #Cargar el progreso previo (si existe)
+    #Cargar el progreso previo (si es que existe)
     df_total, reportes_generados = cargar_progreso()
     todos_los_reportes = df_total.to_dict("records") if not df_total.empty else []
 
-    #----------------------------
-    #PLAN DE GENERACIÓN:
+    #------------------------------------------------------------
+    #PLAN DE GENERACIÓN INICIAL:
     # Creamos una lista con todas las combinaciones posibles:
     # 3 categorías × 3 urgencias × 3 sentimientos = 27 combinaciones
     # Distribuimos los 2000 reportes entre estas combinaciones,
-    # repartiendo el resto para que la suma total sea EXACTA.
-    #----------------------------
+    # repartiendo el resto para que la suma total sea lo mas EXACTA posible.
+    #-------------------------------------------------------------
 
     plan = []
     for categoria in categorias:
@@ -275,7 +266,7 @@ def main():
     #--------------------------------------------------------------
     # AJUSTE POR REANUDACIÓN: contamos cuántos reportes YA existen
     # para cada combinación específica (categoria+urgencia+sentimiento)
-    # y restamos eso de la cuota, para completar solo lo que falta
+    # y restamos eso de la cantidad, para completar solo lo que falta
     # en vez de reintentar todo el plan desde el principio.
     #--------------------------------------------------------------
     if not df_total.empty:
@@ -352,7 +343,7 @@ def main():
                 descartados = len(lote_datos) - len(lote_validado)
                 if descartados > 0:
                     total_descartados_global += descartados
-                    print(f"   ⚠ Descartados {descartados}/{len(lote_datos)} reportes "
+                    print(f" Descartados {descartados}/{len(lote_datos)} reportes "
                           f"por fuga léxica de categoría.")
 
                 #Processamos cada reporte válido del lote
@@ -399,7 +390,7 @@ def main():
                 time.sleep(30)
                 continue
 
-    #FIN
+    #FIN DE LA GENERACIÓN
     print("\n" + "="*50)
     print(f"Generación completada")
     print(f"Total reportes generados:  {len(todos_los_reportes)}")
@@ -407,7 +398,5 @@ def main():
     print(f"Archivo guardado en:       {archivo_salida}")
     print("="*50)
 
-
-# Punto de entrada del script
 if __name__ == "__main__":
     main()
