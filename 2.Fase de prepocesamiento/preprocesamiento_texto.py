@@ -2,7 +2,7 @@
 
 #COMO FUNCIONA ESTE SCRIPT:
 # - Lee el dataset generado en la fase 1
-# - Aplica limpieza de texto (eliminación de emojis, caracteres extraños, acentos, números, etc.)
+# - Aplica limpieza de texto (eliminación de emojis, signos de acentuación sueltos, caracteres extraños, números, etc.)
 # - Genera un nuevo dataset con la columna de "texto limpio"
 
 import pandas as pd
@@ -62,7 +62,7 @@ def limpiar_texto(texto):
 #MAIN
 def main():
 
-    archivo_entrada = archivo_entrada = BASE_DIR / "1.Fase de generación" / "dataset_reportes_sinteticos.csv"
+    archivo_entrada = BASE_DIR / "1.Fase de generación" / "dataset_reportes_sinteticos.csv"
 
     archivo_salida = "dataset_reportes_preprocesado.csv"
 
