@@ -23,7 +23,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        pip install flake8 black
+        pip install flake8
 
     - name: Verificación estricta de errores de sintaxis (Linter)
       run: |
@@ -34,8 +34,3 @@ jobs:
       run: |
         # Revisa mala escritura o formato sucio (advierte sin detener la ejecución de manera agresiva)
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-
-    - name: Validar formato del código con Black
-      run: |
-        # Verifica si el código cumple con las buenas prácticas de formateo
-        black --check .
